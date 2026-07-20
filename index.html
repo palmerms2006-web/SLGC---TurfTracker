@@ -1487,7 +1487,7 @@
       return { ok:false, reason:'VAPID key not configured yet.' };
     }
     try{
-      const reg = await navigator.serviceWorker.register('/sw.js');
+      const registration = await navigator.serviceWorker.register('./sw.js');
       await navigator.serviceWorker.ready;
       let sub = await reg.pushManager.getSubscription();
       if(!sub){
