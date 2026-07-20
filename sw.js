@@ -1,6 +1,5 @@
-// Service worker for Spring Lakes Golf Club Turf Tracker — handles push notifications.
-// Must be hosted at your site's root (e.g. https://yoursite.com/sw.js) so its scope
-// covers the whole app.
+// Spring Lakes Golf Club Turf Tracker service worker
+// Place this file beside index.html in the GitHub repository.
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -12,30 +11,74 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('push', (event) => {
   let data = {};
+
   try {
     data = event.data ? event.data.json() : {};
-  } catch (e) {
-    data = { title: 'Reapplication due soon', body: event.data ? event.data.text() : '' };
+  } catch (error) {
+    data = {
+      title: 'Reapplication due soon',
+      body: event.data ? event.data.text() : ''
+    };
   }
+
   const title = data.title || 'Reapplication due soon';
+
   const options = {
-    body: data.body || '',
-    tag: data.tag || 'reapply',
-    data: { url: data.url || '/' },
-    requireInteraction: false
+    body: data.body || 'Open Turf Tracker for details.',
+    tag: data.tag || `reapplication-${data.applicationId || 'alert'}`,
+    data: {
+      url: data.url || './?tab=applications'
+    },
+    requireInteraction: false,
+    renotify: false
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/';
+
+  const storedUrl =
+    event.notification.data?.url || './?tab=applications';
+
+  // Resolves relative URLs inside the GitHub Pages project folder.
+  const destinationUrl = new URL(
+    storedUrl,
+    self.registration.scope
+  ).href;
+
   event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url === url && 'focus' in client) return client.focus();
-      }
-      if (self.clients.openWindow) return self.clients.openWindow(url);
-    })
+    self.clients
+      .matchAll({
+        type: 'window',
+        includeUncontrolled: true
+      })
+      .then(async (clientList) => {
+        for (const client of clientList) {
+          const clientUrl = new URL(client.url);
+
+          if (
+            clientUrl.origin === new URL(destinationUrl).origin &&
+            clientUrl.pathname.startsWith(
+              new URL(self.registration.scope).pathname
+            )
+          ) {
+            if ('navigate' in client) {
+              await client.navigate(destinationUrl);
+            }
+
+            if ('focus' in client) {
+              return client.focus();
+            }
+          }
+        }
+
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(destinationUrl);
+        }
+      })
   );
 });
