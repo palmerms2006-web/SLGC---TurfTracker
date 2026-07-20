@@ -1,0 +1,11 @@
+{
+  "id": "./",
+  "name": "Spring Lakes Turf Tracker",
+  "short_name": "Turf Tracker",
+  "description": "Spring Lakes Golf Club grounds crew dashboard",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F4F6FA",
+  "theme_color": "#0B2545"
+}
